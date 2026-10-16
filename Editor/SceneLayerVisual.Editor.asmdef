@@ -1,0 +1,7 @@
+{
+  "name": "SceneLayerVisual.Editor",
+  "rootNamespace": "SceneLayerVisuals.Editor",
+  "references": ["SceneLayerVisual.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}
