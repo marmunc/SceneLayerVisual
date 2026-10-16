@@ -16,15 +16,15 @@ namespace SceneLayerVisuals
         private const int MaxCaptureDivisor = 8;
         private const int GradePass = 1;
         private const int BlurPass = 2;
-        private const int MAX_BLUR_TAPS = 32;
-        private static readonly int ExposureId = Shader.PropertyToID("_Exposure");
-        private static readonly int TintId = Shader.PropertyToID("_Tint");
-        private static readonly int TintStrengthId = Shader.PropertyToID("_TintStrength");
-        private static readonly int SaturationId = Shader.PropertyToID("_Saturation");
-        private static readonly int ContrastId = Shader.PropertyToID("_Contrast");
-        private static readonly int BlurTapCountId = Shader.PropertyToID("_BlurTapCount");
-        private static readonly int BlurStepId = Shader.PropertyToID("_BlurStep");
-        private static readonly int MainTextureId = Shader.PropertyToID("_MainTex");
+        private const int MaxBlurTaps = 32;
+        private static readonly int _exposureId = Shader.PropertyToID("_Exposure");
+        private static readonly int _tintId = Shader.PropertyToID("_Tint");
+        private static readonly int _tintStrengthId = Shader.PropertyToID("_TintStrength");
+        private static readonly int _saturationId = Shader.PropertyToID("_Saturation");
+        private static readonly int _contrastId = Shader.PropertyToID("_Contrast");
+        private static readonly int _blurTapCountId = Shader.PropertyToID("_BlurTapCount");
+        private static readonly int _blurStepId = Shader.PropertyToID("_BlurStep");
+        private static readonly int _mainTextureId = Shader.PropertyToID("_MainTex");
         private static readonly int _blurWeightsId = Shader.PropertyToID("_BlurWeights");
 
         [Range(0, MaxBlurRadius), Tooltip("Blur radius in viewing camera pixels. Above 24, capture resolution is reduced automatically for smooth broad blur.")]
@@ -46,10 +46,11 @@ namespace SceneLayerVisuals
         private MeshRenderer _proxy;
         private Material _material;
         private Mesh _mesh;
-        private RenderTexture _capture, _result;
+        private RenderTexture _capture;
+        private RenderTexture _result;
         private int _captureDivisor = 1;
         private bool _hasReportedShaderError;
-        private readonly float[] _blurWeights = new float[MAX_BLUR_TAPS + 1];
+        private readonly float[] _blurWeights = new float[MaxBlurTaps + 1];
         private readonly UniversalRenderPipeline.SingleCameraRequest _captureRequest = new();
         private int _blurTapCount;
 
@@ -122,7 +123,17 @@ namespace SceneLayerVisuals
             EnsureTexture(ref _capture, width, height, 24);
             EnsureTexture(ref _result, width, height, 0);
 
+            ConfigureCaptureCamera(viewer, captureCamera, rendererIndex, width, height, viewHeight, margin);
+            ConfigureProxy(viewer, captureCamera);
+            return true;
+        }
+
+        private void ConfigureCaptureCamera(UnityEngine.Camera viewer, UnityEngine.Camera captureCamera,
+            int rendererIndex, int width, int height, int viewHeight, int margin)
+        {
             captureCamera.CopyFrom(viewer);
+            // Use Game semantics to avoid Scene View's special UI and camera-volume behavior.
+            captureCamera.cameraType = CameraType.Game;
             captureCamera.enabled = false;
             captureCamera.transform.SetPositionAndRotation(viewer.transform.position, viewer.transform.rotation);
             captureCamera.rect = new Rect(0, 0, 1, 1);
@@ -133,8 +144,20 @@ namespace SceneLayerVisuals
             captureCamera.aspect = (float)width / height;
             captureCamera.orthographicSize = viewer.orthographicSize * (viewHeight + margin * 2f) / viewHeight;
             captureCamera.targetTexture = _capture;
-            captureCamera.GetUniversalAdditionalCameraData().SetRenderer(rendererIndex);
+            var captureData = captureCamera.GetUniversalAdditionalCameraData();
+            captureData.SetRenderer(rendererIndex);
+            captureData.renderType = CameraRenderType.Base;
+            captureData.renderPostProcessing = false;
+            captureData.volumeLayerMask = 0;
+            captureData.antialiasing = AntialiasingMode.None;
+            captureData.allowXRRendering = false;
+            captureData.allowHDROutput = false;
+            captureData.renderShadows = viewer.cameraType == CameraType.SceneView
+                || !viewer.TryGetComponent<UniversalAdditionalCameraData>(out var viewerData) || viewerData.renderShadows;
+        }
 
+        private void ConfigureProxy(UnityEngine.Camera viewer, UnityEngine.Camera captureCamera)
+        {
             var group = GetComponent<SortingGroup>();
             _proxy.sortingLayerID = group != null ? group.sortingLayerID : _sources[0].sortingLayerID;
             _proxy.sortingOrder = group != null ? group.sortingOrder : _sources[0].sortingOrder;
@@ -152,24 +175,23 @@ namespace SceneLayerVisuals
             // The helper is unparented: parent scale must not distort its screen-aligned quad.
             _proxy.transform.localScale = new Vector3(captureCamera.orthographicSize * 2 * captureCamera.aspect,
                 captureCamera.orthographicSize * 2, 1);
-            return true;
         }
 
         internal void CaptureAndProcess(UnityEngine.Camera captureCamera)
         {
-            _captureRequest.destination = _capture;
-            RenderPipeline.SubmitRenderRequest(captureCamera, _captureRequest);
-            var oldActive = RenderTexture.active;
+            var previousRenderTarget = RenderTexture.active;
             try
             {
+                _captureRequest.destination = _capture;
+                RenderPipeline.SubmitRenderRequest(captureCamera, _captureRequest);
                 RenderTexture processed = _capture;
                 if (HasColorGrading)
                 {
-                    _material.SetFloat(ExposureId, Mathf.Pow(2, exposure));
-                    _material.SetColor(TintId, tint.linear);
-                    _material.SetFloat(TintStrengthId, tintStrength);
-                    _material.SetFloat(SaturationId, saturation);
-                    _material.SetFloat(ContrastId, contrast);
+                    _material.SetFloat(_exposureId, Mathf.Pow(2, exposure));
+                    _material.SetColor(_tintId, tint.linear);
+                    _material.SetFloat(_tintStrengthId, tintStrength);
+                    _material.SetFloat(_saturationId, saturation);
+                    _material.SetFloat(_contrastId, contrast);
                     Graphics.Blit(_capture, _result, _material, GradePass);
                     processed = _result;
                 }
@@ -179,20 +201,20 @@ namespace SceneLayerVisuals
                     // Keep small scenery from disappearing into subpixel captures.
                     // Once downsampling reaches its limit, increase kernel density instead.
                     int tapCount = blurRadius > WideBlurThreshold
-                        ? Mathf.Clamp(Mathf.CeilToInt(radius), MinimumBlurTaps, MAX_BLUR_TAPS) : MinimumBlurTaps;
+                        ? Mathf.Clamp(Mathf.CeilToInt(radius), MinimumBlurTaps, MaxBlurTaps) : MinimumBlurTaps;
                     UpdateBlurWeights(tapCount);
                     // Ping-pong the two owned textures; no third full-size temporary is needed.
                     RenderTexture intermediate = processed == _capture ? _result : _capture;
-                    _material.SetVector(BlurStepId, new Vector4(radius / _capture.width, 0, 0, 0));
+                    _material.SetVector(_blurStepId, new Vector4(radius / _capture.width, 0, 0, 0));
                     Graphics.Blit(processed, intermediate, _material, BlurPass);
-                    _material.SetVector(BlurStepId, new Vector4(0, radius / _capture.height, 0, 0));
+                    _material.SetVector(_blurStepId, new Vector4(0, radius / _capture.height, 0, 0));
                     Graphics.Blit(intermediate, processed, _material, BlurPass);
                 }
-                _material.SetTexture(MainTextureId, processed);
+                _material.SetTexture(_mainTextureId, processed);
             }
             finally
             {
-                RenderTexture.active = oldActive;
+                RenderTexture.active = previousRenderTarget;
             }
         }
 
@@ -208,7 +230,7 @@ namespace SceneLayerVisuals
                 total += tap == 0 ? weight : weight * 2;
             }
             for (int tap = 0; tap <= tapCount; tap++) _blurWeights[tap] /= total;
-            _material.SetFloat(BlurTapCountId, tapCount);
+            _material.SetFloat(_blurTapCountId, tapCount);
             _material.SetFloatArray(_blurWeightsId, _blurWeights);
             _blurTapCount = tapCount;
         }
@@ -268,6 +290,7 @@ namespace SceneLayerVisuals
 
         internal void Release()
         {
+            if (SceneLayerVisualRendering.TryDeferRelease(this)) return;
             if (_proxy != null) { _proxy.enabled = false; DestroyResource(_proxy.gameObject); }
             DestroyResource(_material); DestroyResource(_mesh);
             DestroyResource(_capture); DestroyResource(_result);
@@ -275,6 +298,5 @@ namespace SceneLayerVisuals
             _captureRequest.destination = null;
             _blurTapCount = 0;
         }
-
     }
 }

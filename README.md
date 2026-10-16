@@ -13,6 +13,7 @@ Add one component to a scenery container to process its children together, after
 - Full, Half and Quarter capture resolution; extra downsampling for wide blur.
 - Independent settings for sibling scenery groups.
 - SpriteMask-aware capture, including masks outside the container.
+- UI and standalone 2D light volumes stay outside the layer capture; source sprites keep their normal illumination.
 - Neutral defaults bypass processing; disabling the component releases its resources.
 - Multi-object Inspector, Undo and a bulk-add command for direct children.
 
@@ -31,10 +32,10 @@ Perspective and stereo cameras, overlay cameras and base cameras with a non-empt
 Open **Window → Package Manager → + → Install package from git URL** and paste:
 
 ```text
-https://github.com/marmunc/SceneLayerVisual.git#v0.1.1
+https://github.com/marmunc/SceneLayerVisual.git#v0.1.2
 ```
 
-Alternatively, download `SceneLayerVisual-0.1.1.zip` from the [0.1.1 release](https://github.com/marmunc/SceneLayerVisual/releases/tag/v0.1.1), extract it, choose **Install package from disk**, and select `package.json`.
+Alternatively, download `SceneLayerVisual-0.1.2.zip` from the [0.1.2 release](https://github.com/marmunc/SceneLayerVisual/releases/tag/v0.1.2), extract it, choose **Install package from disk**, and select `package.json`.
 
 Unity's [Git package instructions](https://docs.unity3d.com/6000.2/Documentation/Manual/upm-ui-giturl.html) explain Git prerequisites. The package follows Unity's [UPM layout](https://docs.unity3d.com/6000.2/Documentation/Manual/cus-layout.html).
 
@@ -65,7 +66,7 @@ Disabled/inactive renderers are excluded, and existing `forceRenderingOff` value
 
 Each visible, non-neutral group needs another camera render. Color grading adds one image pass when its values are non-neutral; blur adds two. The capture and result textures are reused for all image passes, with no third full-size blur buffer. Gaussian weights are normalized once when the sample count changes.
 
-The implementation scans active scene renderers once per viewing camera only when an effect group is visible. Outside artwork is hidden/restored once for the batch; between captures only the current group's sources change visibility. Full resolution and many groups still cost more CPU, GPU time and memory.
+The implementation scans active scene Renderers, Canvas and Light2D components once per viewing camera only when an effect group is visible. Outside artwork, UI and standalone light volumes are hidden/restored once for the batch; between captures only the current group's sources change visibility. Canvas enable changes can also trigger UI rebuilds. Full resolution and many groups still cost more CPU, GPU time and memory.
 
 Above 24 pixels of blur, capture resolution automatically drops, up to 8x per dimension. Above that limit the shader increases sample density. Wide blur can therefore cost more even after downsampling. Neutral settings bypass processing and keep existing buffers for reuse; disabling/removing the component releases them.
 

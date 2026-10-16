@@ -46,6 +46,7 @@ internal static class SceneLayerVisualPlayModeCheck
             _settleTicks--;
             if (_settleTicks != 0) return;
             Debug.Log("SLV_PLAYMODE_BASELINE: cycle=" + (_completedCycles + 1) + " " + SceneLayerVisualBaseline.Run());
+            SceneLayerVisualCaptureIsolationChecks.Run();
             EditorApplication.ExitPlaymode();
         }
         catch (Exception exception)

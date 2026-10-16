@@ -22,6 +22,12 @@ public static class SceneLayerVisualPackageChecks
             AssetDatabase.CreateFolder("Assets", "Demo");
             var forward = ScriptableObject.CreateInstance<UniversalRendererData>();
             var renderer2D = ScriptableObject.CreateInstance<Renderer2DData>();
+            var postProcessData = AssetDatabase.LoadAssetAtPath<PostProcessData>("Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset");
+            Require(postProcessData != null, "URP post-process resources for isolation checks");
+            forward.postProcessData = postProcessData;
+            var serialized2D = new SerializedObject(renderer2D);
+            serialized2D.FindProperty("m_PostProcessData").objectReferenceValue = postProcessData;
+            serialized2D.ApplyModifiedPropertiesWithoutUndo();
             AssetDatabase.CreateAsset(forward, "Assets/Demo/Forward.asset");
             AssetDatabase.CreateAsset(renderer2D, "Assets/Demo/Renderer2D.asset");
             _pipeline = UniversalRenderPipelineAsset.Create(forward);
@@ -52,6 +58,7 @@ public static class SceneLayerVisualPackageChecks
             Debug.Log("SLV_BASELINE: " + SceneLayerVisualBaseline.Run());
             CheckMasksAndLifecycle();
             SceneLayerVisualGizmoChecks.Run();
+            SceneLayerVisualCaptureIsolationChecks.Run();
             CreateDemo();
             CheckImportedSample();
             AssetDatabase.SaveAssets();
@@ -68,7 +75,7 @@ public static class SceneLayerVisualPackageChecks
             {
                 Unity = Application.unityVersion,
                 Package = package.version,
-                Baseline = true, MasksAndLifecycle = true, StandaloneBuild = true
+                Baseline = true, MasksAndLifecycle = true, Gizmos = true, CaptureIsolation = true, StandaloneBuild = true
             }, true));
             SceneLayerVisualPlayModeCheck.Begin();
         }
@@ -332,6 +339,8 @@ public static class SceneLayerVisualPackageChecks
         public string Package;
         public bool Baseline;
         public bool MasksAndLifecycle;
+        public bool Gizmos;
+        public bool CaptureIsolation;
         public bool StandaloneBuild;
     }
 }
