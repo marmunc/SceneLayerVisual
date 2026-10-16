@@ -51,6 +51,7 @@ public static class SceneLayerVisualPackageChecks
             Require(shader != null && shader.isSupported && !ShaderUtil.ShaderHasError(shader), "Package shader");
             Debug.Log("SLV_BASELINE: " + SceneLayerVisualBaseline.Run());
             CheckMasksAndLifecycle();
+            SceneLayerVisualGizmoChecks.Run();
             CreateDemo();
             CheckImportedSample();
             AssetDatabase.SaveAssets();
@@ -76,7 +77,8 @@ public static class SceneLayerVisualPackageChecks
 
     private static void CheckImportedSample()
     {
-        var sample = UnityEditor.PackageManager.UI.Sample.FindByPackage("com.marmunc.scene-layer-visual", "0.1.0").First();
+        string version = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(SceneLayerVisual).Assembly).version;
+        var sample = UnityEditor.PackageManager.UI.Sample.FindByPackage("com.marmunc.scene-layer-visual", version).First();
         Require(sample.Import(UnityEditor.PackageManager.UI.Sample.ImportOptions.OverridePreviousImports), "Sample import");
         string scenePath = Path.GetRelativePath(Path.GetDirectoryName(Application.dataPath),
             Path.Combine(sample.importPath, "BasicDemo.unity")).Replace('\\', '/');

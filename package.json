@@ -1,14 +1,14 @@
 {
   "name": "com.marmunc.scene-layer-visual",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Scene Layer Visual",
   "description": "Per-group blur and color grading for orthographic Unity URP scenery, with SpriteMask-aware capture and Scene View preview.",
   "unity": "6000.2",
   "author": { "name": "marmunc", "url": "https://github.com/marmunc" },
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/marmunc/SceneLayerVisual.git" },
-  "documentationUrl": "https://github.com/marmunc/SceneLayerVisual/blob/v0.1.0/README.md",
-  "changelogUrl": "https://github.com/marmunc/SceneLayerVisual/blob/v0.1.0/CHANGELOG.md",
+  "documentationUrl": "https://github.com/marmunc/SceneLayerVisual/blob/v0.1.1/README.md",
+  "changelogUrl": "https://github.com/marmunc/SceneLayerVisual/blob/v0.1.1/CHANGELOG.md",
   "keywords": ["2d", "urp", "blur", "color-grading", "sprites"],
   "dependencies": { "com.unity.render-pipelines.universal": "17.2.0", "com.unity.2d.sprite": "1.0.0" },
   "samples": [

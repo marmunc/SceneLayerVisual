@@ -129,8 +129,17 @@ namespace SceneLayerVisuals
             }
             _viewer = camera;
             _capturing = true;
+#if UNITY_EDITOR
+            var sceneView = UnityEditor.SceneView.currentDrawingSceneView;
+            bool restoreGizmos = sceneView != null && sceneView.drawGizmos;
+#endif
             try
             {
+#if UNITY_EDITOR
+                // URP reads the current Scene View's gizmo flag even for our nested camera request.
+                // Renderer isolation cannot hide camera outlines or OnDrawGizmos geometry.
+                if (restoreGizmos) sceneView.drawGizmos = false;
+#endif
                 int cameraMask = camera.cullingMask;
                 foreach (var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
                 {
@@ -162,7 +171,13 @@ namespace SceneLayerVisuals
                 Restore();
                 if (!_reportedError) { Debug.LogException(exception); _reportedError = true; }
             }
-            finally { _capturing = false; }
+            finally
+            {
+                _capturing = false;
+#if UNITY_EDITOR
+                if (restoreGizmos && sceneView != null) sceneView.drawGizmos = true;
+#endif
+            }
         }
 
         private static void End(ScriptableRenderContext context, UnityEngine.Camera camera)

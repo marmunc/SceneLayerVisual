@@ -31,10 +31,10 @@ Perspective and stereo cameras, overlay cameras and base cameras with a non-empt
 Open **Window → Package Manager → + → Install package from git URL** and paste:
 
 ```text
-https://github.com/marmunc/SceneLayerVisual.git#v0.1.0
+https://github.com/marmunc/SceneLayerVisual.git#v0.1.1
 ```
 
-Alternatively, download `SceneLayerVisual-0.1.0.zip` from the [0.1.0 release](https://github.com/marmunc/SceneLayerVisual/releases/tag/v0.1.0), extract it, choose **Install package from disk**, and select `package.json`.
+Alternatively, download `SceneLayerVisual-0.1.1.zip` from the [0.1.1 release](https://github.com/marmunc/SceneLayerVisual/releases/tag/v0.1.1), extract it, choose **Install package from disk**, and select `package.json`.
 
 Unity's [Git package instructions](https://docs.unity3d.com/6000.2/Documentation/Manual/upm-ui-giturl.html) explain Git prerequisites. The package follows Unity's [UPM layout](https://docs.unity3d.com/6000.2/Documentation/Manual/cus-layout.html).
 

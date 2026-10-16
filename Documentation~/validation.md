@@ -1,4 +1,4 @@
-# Validation — 0.1.0
+# Validation — 0.1.1
 
 Tested on Windows with Unity 6000.2.7f2, URP 17.2.0, Linear color space and an NVIDIA GeForce RTX 4070 SUPER.
 
@@ -9,6 +9,7 @@ Tested on Windows with Unity 6000.2.7f2, URP 17.2.0, Linear color space and an N
 - Component disable restores original rendering and releases capture textures; pre-hidden sources retain their state.
 - Internal/external SpriteMask, both inside/outside interaction modes, camera culling and mixed source Unity Layers.
 - Capture isolation for unrelated translucent artwork; neutral/offscreen groups allocate no capture buffer.
+- Scene View gizmos remain visible in the viewing camera but are excluded from the effect capture; enabled and disabled gizmo toggle states are preserved in both renderers.
 - Imported Basic Demo: three effect components, no missing scripts and retained asset GUIDs.
 - Two Play Mode cycles with Domain Reload and Scene Reload disabled.
 - Windows development build and built-player rendering: packaged shader available, effects change the image and source visibility is restored.

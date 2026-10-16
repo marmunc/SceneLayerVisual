@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-10-16
+
+- Exclude Scene View gizmos from layer captures so camera outlines and custom gizmo fills are not blurred or color graded.
+- Restore the Scene View gizmo toggle after the capture batch, including when rendering fails.
+- Add a regression check for capture isolation and normal editor gizmo visibility in Universal and 2D Renderer.
+- Resolve the demo sample using the installed package version in the validation script.
+
 ## 0.1.0 — 2026-10-16
 
 - Per-group Gaussian blur, exposure, tint, saturation and contrast for orthographic URP scenery.
